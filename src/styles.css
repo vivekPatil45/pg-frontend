@@ -1,1 +1,273 @@
 /* You can add global styles to this file, and also import other style files */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hotel Management System Design System
+   A sophisticated hotel-themed palette with warm golds, deep navy, and elegant neutrals
+   All colors in HSL format
+*/
+
+@layer base {
+    :root {
+        /* Primary - Deep Navy Blue (Luxury hotel feel) */
+        --background: 210 30% 98%;
+        --foreground: 222 47% 11%;
+
+        /* Cards with subtle warmth */
+        --card: 0 0% 100%;
+        --card-foreground: 222 47% 11%;
+
+        --popover: 0 0% 100%;
+        --popover-foreground: 222 47% 11%;
+
+        /* Primary - Rich Navy */
+        --primary: 222 47% 20%;
+        --primary-foreground: 48 96% 95%;
+
+        /* Secondary - Warm Gold */
+        --secondary: 43 74% 49%;
+        --secondary-foreground: 222 47% 11%;
+
+        /* Muted - Soft Gray */
+        --muted: 210 20% 96%;
+        --muted-foreground: 215 16% 47%;
+
+        /* Accent - Deep Gold */
+        --accent: 38 92% 50%;
+        --accent-foreground: 222 47% 11%;
+
+        /* Status Colors */
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+
+        --success: 142 76% 36%;
+        --success-foreground: 0 0% 100%;
+
+        --warning: 38 92% 50%;
+        --warning-foreground: 222 47% 11%;
+
+        --info: 199 89% 48%;
+        --info-foreground: 0 0% 100%;
+
+        /* Borders and Inputs */
+        --border: 214 32% 91%;
+        --input: 214 32% 91%;
+        --ring: 222 47% 20%;
+
+        --radius: 0.5rem;
+
+        /* Sidebar - Elegant Navy */
+        --sidebar-background: 222 47% 15%;
+        --sidebar-foreground: 48 20% 95%;
+        --sidebar-primary: 43 74% 49%;
+        --sidebar-primary-foreground: 222 47% 11%;
+        --sidebar-accent: 222 47% 22%;
+        --sidebar-accent-foreground: 48 20% 95%;
+        --sidebar-border: 222 30% 25%;
+        --sidebar-ring: 43 74% 49%;
+
+        /* Custom Hotel Theme Variables */
+        --hotel-gold: 43 74% 49%;
+        --hotel-gold-light: 45 93% 58%;
+        --hotel-navy: 222 47% 15%;
+        --hotel-navy-light: 222 35% 25%;
+        --hotel-cream: 48 96% 95%;
+        --hotel-warm-gray: 30 10% 94%;
+
+        /* Gradients */
+        --gradient-gold: linear-gradient(135deg, hsl(43 74% 49%), hsl(38 92% 50%));
+        --gradient-navy: linear-gradient(135deg, hsl(222 47% 15%), hsl(222 47% 25%));
+        --gradient-hero: linear-gradient(135deg, hsl(222 47% 15%) 0%, hsl(222 47% 25%) 50%, hsl(43 74% 49% / 0.2) 100%);
+
+        /* Shadows */
+        --shadow-sm: 0 1px 2px 0 hsl(222 47% 11% / 0.05);
+        --shadow-md: 0 4px 6px -1px hsl(222 47% 11% / 0.1), 0 2px 4px -2px hsl(222 47% 11% / 0.1);
+        --shadow-lg: 0 10px 15px -3px hsl(222 47% 11% / 0.1), 0 4px 6px -4px hsl(222 47% 11% / 0.1);
+        --shadow-gold: 0 4px 14px 0 hsl(43 74% 49% / 0.25);
+    }
+
+    .dark {
+        --background: 222 47% 8%;
+        --foreground: 48 20% 95%;
+
+        --card: 222 47% 11%;
+        --card-foreground: 48 20% 95%;
+
+        --popover: 222 47% 11%;
+        --popover-foreground: 48 20% 95%;
+
+        --primary: 43 74% 49%;
+        --primary-foreground: 222 47% 11%;
+
+        --secondary: 222 35% 20%;
+        --secondary-foreground: 48 20% 95%;
+
+        --muted: 222 30% 18%;
+        --muted-foreground: 215 20% 65%;
+
+        --accent: 43 74% 49%;
+        --accent-foreground: 222 47% 11%;
+
+        --destructive: 0 62% 50%;
+        --destructive-foreground: 0 0% 100%;
+
+        --success: 142 76% 42%;
+        --success-foreground: 0 0% 100%;
+
+        --warning: 38 92% 50%;
+        --warning-foreground: 222 47% 11%;
+
+        --info: 199 89% 55%;
+        --info-foreground: 222 47% 11%;
+
+        --border: 222 30% 22%;
+        --input: 222 30% 22%;
+        --ring: 43 74% 49%;
+
+        --sidebar-background: 222 47% 8%;
+        --sidebar-foreground: 48 20% 95%;
+        --sidebar-primary: 43 74% 49%;
+        --sidebar-primary-foreground: 222 47% 11%;
+        --sidebar-accent: 222 47% 15%;
+        --sidebar-accent-foreground: 48 20% 95%;
+        --sidebar-border: 222 30% 18%;
+        --sidebar-ring: 43 74% 49%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground antialiased;
+        font-feature-settings: "rlig" 1, "calt" 1;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        @apply bg-muted;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        @apply bg-muted-foreground/30 rounded-full;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        @apply bg-muted-foreground/50;
+    }
+}
+
+@layer components {
+
+    /* Status Badge Variants */
+    .badge-booked {
+        @apply bg-info/10 text-info border-info/20;
+    }
+
+    .badge-confirmed {
+        @apply bg-success/10 text-success border-success/20;
+    }
+
+    .badge-cancelled {
+        @apply bg-destructive/10 text-destructive border-destructive/20;
+    }
+
+    .badge-pending {
+        @apply bg-warning/10 text-warning border-warning/20;
+    }
+
+    .badge-paid {
+        @apply bg-success/10 text-success border-success/20;
+    }
+
+    .badge-open {
+        @apply bg-info/10 text-info border-info/20;
+    }
+
+    .badge-closed {
+        @apply bg-muted text-muted-foreground border-muted-foreground/20;
+    }
+
+    .badge-in-progress {
+        @apply bg-warning/10 text-warning border-warning/20;
+    }
+
+    /* Card Hover Effects */
+    .card-hover {
+        @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+    }
+
+    /* Glass Effect */
+    .glass {
+        @apply bg-white/80 backdrop-blur-md border border-white/20;
+    }
+
+    /* Gold Glow Effect */
+    .gold-glow {
+        box-shadow: 0 0 20px hsl(43 74% 49% / 0.3);
+    }
+}
+
+@layer utilities {
+
+    /* Animation Utilities */
+    .animate-fade-in {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .animate-slide-up {
+        animation: slideUp 0.3s ease-out;
+    }
+
+    .animate-slide-down {
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Text Gradient */
+    .text-gradient-gold {
+        @apply bg-clip-text text-transparent;
+        background-image: linear-gradient(135deg, hsl(43 74% 49%), hsl(38 92% 55%));
+    }
+}
