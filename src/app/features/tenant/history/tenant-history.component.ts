@@ -165,7 +165,7 @@ import { ToastService } from '../../../core/services/toast.service';
                         }
                     </td>
                     <td class="py-3 px-4">
-                        <div class="font-medium text-foreground whitespace-nowrap">SilverPG, Pune</div>
+                        <div class="font-medium text-foreground whitespace-nowrap">Silver PG, Pune</div>
                         <div class="text-xs text-muted-foreground whitespace-nowrap">{{ booking.room?.roomType }} (Room {{ booking.room?.roomNumber }})</div>
                     </td>
                     <td class="py-3 px-4 text-sm text-foreground">
@@ -257,7 +257,7 @@ import { ToastService } from '../../../core/services/toast.service';
                 </div>
                 <div>
                     <p class="text-sm text-muted-foreground">Accommodation</p>
-                    <p class="font-medium">SilverPG</p>
+                    <p class="font-medium">Silver PG</p>
                     <p class="text-sm text-muted-foreground">12, Koregaon Park Road, Pune</p>
                 </div>
                 <div>

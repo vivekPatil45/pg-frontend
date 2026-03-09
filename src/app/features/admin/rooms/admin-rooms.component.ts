@@ -10,6 +10,7 @@ import { AdminRoomService } from '../../../core/services/admin-room.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Room, CreateRoomData, UpdateRoomData } from '../../../models/room.model';
 import { AdminBedsComponent } from './admin-beds.component';
+import { AdminRoomBulkImportComponent } from './admin-room-bulk-import.component';
 
 @Component({
   selector: 'app-admin-rooms',
@@ -23,7 +24,8 @@ import { AdminBedsComponent } from './admin-beds.component';
     ModalComponent,
     ConfirmModalComponent,
     LoadingSpinnerComponent,
-    AdminBedsComponent
+    AdminBedsComponent,
+    AdminRoomBulkImportComponent
   ],
   template: `
     <div class="space-y-6 animate-fade-in">
@@ -57,6 +59,7 @@ import { AdminBedsComponent } from './admin-beds.component';
             <option value="AVAILABLE">Available</option>
             <option value="UNAVAILABLE">Full</option>
           </select>
+          <app-button variant="outline" (click)="openBulkImportModal()">Bulk Import</app-button>
           <app-button (click)="openAddModal()">+ Add Room</app-button>
         </div>
       </div>
@@ -305,6 +308,19 @@ import { AdminBedsComponent } from './admin-beds.component';
       </div>
     </app-modal>
 
+    <!-- Bulk Import Modal -->
+    <app-modal
+      [isOpen]="isBulkImportModalOpen"
+      title="Bulk Import Rooms"
+      size="lg"
+      (close)="closeBulkImportModal()"
+    >
+      <app-admin-room-bulk-import></app-admin-room-bulk-import>
+      <div class="mt-6 flex justify-end">
+        <app-button variant="outline" (click)="closeBulkImportModal()">Close</app-button>
+      </div>
+    </app-modal>
+
     <!-- Confirm Delete Room Modal -->
     <app-confirm-modal
       [isOpen]="isConfirmDeleteOpen"
@@ -324,6 +340,7 @@ export class AdminRoomsComponent implements OnInit {
   errorMessage = '';
   isModalOpen = false;
   isBedsModalOpen = false;
+  isBulkImportModalOpen = false;
   isConfirmDeleteOpen = false;
   isEditMode = false;
   isSubmitting = false;
@@ -541,5 +558,14 @@ export class AdminRoomsComponent implements OnInit {
     this.isBedsModalOpen = false;
     this.selectedRoom = null;
     this.loadRooms(this.currentPage); // Refresh room status/counts
+  }
+
+  openBulkImportModal() {
+    this.isBulkImportModalOpen = true;
+  }
+
+  closeBulkImportModal() {
+    this.isBulkImportModalOpen = false;
+    this.loadRooms(this.currentPage); // Refresh room list
   }
 }

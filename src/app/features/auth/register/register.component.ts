@@ -9,30 +9,23 @@ import { RegisterData } from '../../../models/user.model';
 import { ToastService } from '../../../core/services/toast.service';
 import { getErrorMessage } from '../../../shared/utils/error.util';
 
-// Country code rules: { digits: number | [min, max], label: string }
 const COUNTRY_RULES: Record<string, { min: number; max: number; label: string; placeholder: string }> = {
-  '+1': { min: 10, max: 10, label: 'US / Canada', placeholder: '2015550123' },
-  '+44': { min: 10, max: 10, label: 'United Kingdom', placeholder: '7911123456' },
   '+91': { min: 10, max: 10, label: 'India', placeholder: '9876543210' },
-  '+61': { min: 9, max: 9, label: 'Australia', placeholder: '412345678' },
-  '+971': { min: 9, max: 9, label: 'UAE', placeholder: '501234567' },
-  '+65': { min: 8, max: 8, label: 'Singapore', placeholder: '81234567' },
-  '+60': { min: 9, max: 10, label: 'Malaysia', placeholder: '123456789' },
-  '+81': { min: 10, max: 11, label: 'Japan', placeholder: '09012345678' },
-  '+49': { min: 10, max: 11, label: 'Germany', placeholder: '15123456789' },
-  '+33': { min: 9, max: 9, label: 'France', placeholder: '612345678' },
 };
 
-function mobileNumberValidator(group: AbstractControl): ValidationErrors | null {
-  const code = group.get('countryCode')?.value as string;
-  const num = group.get('mobileNumber')?.value as string;
-  if (!code || !num) return null;
-  const rule = COUNTRY_RULES[code];
-  if (!rule) return null;
+function mobileNumberValidator(control: AbstractControl): ValidationErrors | null {
+  const num = control.value as string;
+  if (!num) return null;
   const digits = num.replace(/\D/g, '');
-  if (digits.length < rule.min || digits.length > rule.max) {
+
+  if (digits.length !== 10) {
     return { invalidMobile: true };
   }
+
+  if (!/^[6-9]/.test(digits)) {
+    return { invalidMobilePrefix: true };
+  }
+
   return null;
 }
 
@@ -105,37 +98,40 @@ function mobileNumberValidator(group: AbstractControl): ValidationErrors | null 
 
         <!-- Mobile Number -->
         <div class="space-y-2">
-          <label class="text-sm font-medium text-foreground block">
+          <label for="mobileNumber" class="text-sm font-medium text-foreground block">
             Mobile Number <span class="text-destructive">*</span>
           </label>
-          <div class="flex gap-3">
-            <select 
-                formControlName="countryCode"
-                (change)="onCountryChange()"
-                class="flex h-11 w-32 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
-            >
-                <option value="+1">+1 (US/CA)</option>
-                <option value="+44">+44 (UK)</option>
-                <option value="+91">+91 (IN)</option>
-                <option value="+61">+61 (AU)</option>
-                <option value="+971">+971 (UAE)</option>
-                <option value="+65">+65 (SG)</option>
-                <option value="+60">+60 (MY)</option>
-                <option value="+81">+81 (JP)</option>
-                <option value="+49">+49 (DE)</option>
-                <option value="+33">+33 (FR)</option>
-            </select>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium border-r border-border pr-2">+91</span>
             <input
                 id="mobileNumber"
                 type="tel"
                 formControlName="mobileNumber"
-                class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
-                [placeholder]="mobilePlaceholder"
+                class="flex h-11 w-full rounded-md border border-input bg-background pl-14 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                placeholder="9876543210"
                 [class.border-destructive]="isMobileInvalid()"
             />
           </div>
           @if (isMobileInvalid()) {
             <p class="text-sm text-destructive mt-1">{{ getMobileErrorMessage() }}</p>
+          }
+        </div>
+
+        <!-- ID Proof -->
+        <div class="space-y-2">
+          <label for="idProof" class="text-sm font-medium text-foreground block">
+            ID Proof (Aadhar/PAN/Voter ID) <span class="text-destructive">*</span>
+          </label>
+          <input
+            id="idProof"
+            type="text"
+            formControlName="idProof"
+            class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+            placeholder="Enter your ID proof number"
+            [class.border-destructive]="isFieldInvalid('idProof')"
+          />
+          @if (isFieldInvalid('idProof')) {
+            <p class="text-sm text-destructive mt-1">{{ getErrorMessage('idProof') }}</p>
           }
         </div>
 
@@ -233,48 +229,35 @@ export class RegisterComponent implements OnInit {
         Validators.pattern('^[a-zA-Z\\s]+$')
       ]],
       email: ['', [Validators.required, Validators.email]],
-      countryCode: ['+91', [Validators.required]],
       mobileNumber: ['', [
         Validators.required,
-        Validators.pattern('^[0-9]+$')   // digits only; length checked by group validator
+        Validators.pattern('^[0-9]+$'),
+        mobileNumberValidator
       ]],
+      idProof: ['', [Validators.required, Validators.minLength(5)]],
       password: ['', [
         Validators.required,
         Validators.minLength(8),
         Validators.pattern('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$')
       ]],
       confirmPassword: ['', [Validators.required]]
-    }, { validators: [this.passwordMatchValidator, mobileNumberValidator] });
+    }, { validators: [this.passwordMatchValidator] });
   }
 
   ngOnInit(): void {
-    this.updatePlaceholder('+91');
   }
 
   onCountryChange(): void {
-    const code = this.registerForm.get('countryCode')?.value;
-    this.updatePlaceholder(code);
-    // Re-trigger validation when country changes
-    this.registerForm.get('mobileNumber')?.updateValueAndValidity();
-    this.registerForm.updateValueAndValidity();
-  }
-
-  private updatePlaceholder(code: string): void {
-    this.mobilePlaceholder = COUNTRY_RULES[code]?.placeholder ?? '123456789';
   }
 
   isMobileInvalid(): boolean {
     const field = this.registerForm.get('mobileNumber');
     const touched = field?.dirty || field?.touched;
-    const fieldErr = field?.invalid;
-    const groupErr = this.registerForm.errors?.['invalidMobile'];
-    return !!(touched && (fieldErr || groupErr));
+    return !!(touched && (field?.invalid || field?.errors?.['invalidMobile'] || field?.errors?.['invalidMobilePrefix']));
   }
 
   getMobileErrorMessage(): string {
     const field = this.registerForm.get('mobileNumber');
-    const code = this.registerForm.get('countryCode')?.value as string;
-    const rule = COUNTRY_RULES[code];
 
     if (field?.errors?.['required']) {
       return 'Mobile number is required.';
@@ -282,13 +265,13 @@ export class RegisterComponent implements OnInit {
     if (field?.errors?.['pattern']) {
       return 'Please enter digits only — no spaces, dashes, or special characters.';
     }
-    if (this.registerForm.errors?.['invalidMobile'] && rule) {
-      const range = rule.min === rule.max
-        ? `${rule.min} digits`
-        : `${rule.min}–${rule.max} digits`;
-      return `Please enter a valid ${rule.label} mobile number (${range}). Example: ${rule.placeholder}`;
+    if (field?.errors?.['invalidMobilePrefix']) {
+      return 'Invalid Indian mobile number. Must start with 6, 7, 8, or 9.';
     }
-    return 'Please enter a valid mobile number.';
+    if (field?.errors?.['invalidMobile']) {
+      return `Please enter a valid 10-digit Indian mobile number.`;
+    }
+    return 'Please enter a valid Indian mobile number.';
   }
 
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -329,6 +312,11 @@ export class RegisterComponent implements OnInit {
 
 
 
+    if (fieldName === 'idProof') {
+      if (field.errors['required']) return 'ID Proof is required';
+      if (field.errors['minlength']) return 'Enter a valid ID proof number';
+    }
+
     if (fieldName === 'password') {
       if (field.errors['required']) return 'Password is required';
       if (field.errors['minlength']) return 'Password must be at least 8 characters';
@@ -344,9 +332,7 @@ export class RegisterComponent implements OnInit {
   }
 
   onReset(): void {
-    this.registerForm.reset({
-      countryCode: '+91'
-    });
+    this.registerForm.reset();
     this.error = '';
   }
 
@@ -361,10 +347,11 @@ export class RegisterComponent implements OnInit {
       const registerData: RegisterData = {
         name: formValue.name,
         email: formValue.email,
-        phone: `${formValue.countryCode}-${formValue.mobileNumber}`,
+        phone: formValue.mobileNumber, // Already standardized to 10 digits
+        idProof: formValue.idProof,
         password: formValue.password,
         confirmPassword: formValue.confirmPassword,
-        address: 'Not provided' // Backend requires address, but it's not in the current registration form
+        address: 'Not provided'
       };
 
       this.authService.register(registerData).subscribe({

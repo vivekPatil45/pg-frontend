@@ -85,5 +85,19 @@ export class AdminRoomService {
         return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${roomId}`);
     }
 
-    // Removed bulk import and template endpoints as they are hotel-specific
+    /**
+     * Bulk import rooms from CSV
+     */
+    bulkImportRooms(file: File): Observable<ApiResponse<any>> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.http.post<ApiResponse<any>>(`${this.apiUrl}/bulk-import`, formData);
+    }
+
+    /**
+     * Download CSV template for room import
+     */
+    downloadTemplate(): Observable<Blob> {
+        return this.http.get(`${this.apiUrl}/template`, { responseType: 'blob' });
+    }
 }

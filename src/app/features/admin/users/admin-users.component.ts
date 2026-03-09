@@ -169,9 +169,16 @@ import { UserRole } from '../../../models/user.model';
           </div>
           <div class="space-y-2">
             <label class="text-sm font-medium text-foreground">Phone *</label>
-            <input formControlName="phone" type="tel" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="+91-9999999999">
-            @if (createForm.get('phone')?.invalid && createForm.get('phone')?.touched) {
-              <span class="text-xs text-destructive">Phone is required.</span>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium border-r border-border pr-2">+91</span>
+              <input formControlName="phone" type="tel" class="flex h-10 w-full rounded-md border border-input bg-background pl-14 pr-3 py-2 text-sm" placeholder="9876543210">
+            </div>
+            @if (createForm.get('phone')?.touched) {
+              @if (createForm.get('phone')?.errors?.['required']) {
+                <span class="text-xs text-destructive">Phone is required.</span>
+              } @else if (createForm.get('phone')?.errors?.['pattern']) {
+                <span class="text-xs text-destructive">Enter a valid 10-digit Indian number.</span>
+              }
             }
           </div>
           <div class="space-y-2">
@@ -239,7 +246,7 @@ export class AdminUsersComponent implements OnInit {
     this.createForm = this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      phone: ['', Validators.required],
+      phone: ['', [Validators.required, Validators.pattern('^(\\+91[\\-\\s]?)?[6-9]\\d{9}$')]],
       role: ['TENANT', Validators.required]
     });
   }

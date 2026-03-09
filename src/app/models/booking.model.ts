@@ -8,6 +8,7 @@ export interface Booking {
     bookingId?: string;
     userId: string;
     user?: User;
+    tenant?: any;
     roomId: string;
     room?: Room;
     bedId: string;

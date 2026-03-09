@@ -38,18 +38,18 @@ export class InvoiceService {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(24);
         doc.setTextColor(...white);
-        doc.text('Grand Space PG', pageWidth / 2, 22, { align: 'center' });
+        doc.text('Silver PG', pageWidth / 2, 22, { align: 'center' });
 
         // Tagline
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
         doc.setTextColor(186, 214, 255);
-        doc.text('Luxury & Comfort | Pune, Maharashtra', pageWidth / 2, 30, { align: 'center' });
+        doc.text('Premium Living & Comfort | Pune, Maharashtra', pageWidth / 2, 30, { align: 'center' });
 
         // Contact line
         doc.setTextColor(186, 214, 255);
         doc.setFontSize(8);
-        doc.text('12, Koregaon Park Road, Pune 411001  •  +91 98765 43210  •  support@grandspacepg.com', pageWidth / 2, 38, { align: 'center' });
+        doc.text('12, Koregaon Park Road, Pune 411001  •  +91 98765 43210  •  support@silverpg.com', pageWidth / 2, 38, { align: 'center' });
 
         // INVOICE label on right corner
         doc.setFont('helvetica', 'bold');
@@ -115,9 +115,11 @@ export class InvoiceService {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
         doc.setTextColor(...textDark);
-        const guestName = booking.user?.name || 'Tenant';
-        const guestEmail = booking.user?.email || 'N/A';
-        const guestPhone = booking.user?.phone || 'N/A';
+        // Backend returns user nested in tenant for some endpoints
+        const user = booking.user || booking.tenant?.user;
+        const guestName = user?.name || 'Tenant';
+        const guestEmail = user?.email || 'N/A';
+        const guestPhone = user?.phone || 'N/A';
         doc.text(guestName, margin, sectionY + 9);
         doc.text(guestEmail, margin, sectionY + 16);
         doc.text(guestPhone, margin, sectionY + 23);
@@ -224,8 +226,8 @@ export class InvoiceService {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(...white);
-        doc.text('Thank you for choosing Grand Space PG — We look forward to welcoming you!', pageWidth / 2, pageHeight - 8, { align: 'center' });
-        doc.text(`www.grandspacepg.com  |  support@grandspacepg.com  |  +91 98765 43210`, pageWidth / 2, pageHeight - 3, { align: 'center' });
+        doc.text('Thank you for choosing Silver PG — We look forward to welcoming you!', pageWidth / 2, pageHeight - 8, { align: 'center' });
+        doc.text(`www.silverpg.com  |  support@silverpg.com  |  +91 98765 43210`, pageWidth / 2, pageHeight - 3, { align: 'center' });
 
         // Watermark if unpaid
         if (booking.paymentStatus !== 'PAID') {
@@ -238,7 +240,7 @@ export class InvoiceService {
         }
 
         // ─── SAVE ───────────────────────────────────────────────────────
-        doc.save(`GrandSpacePG_Invoice_${invoiceId}.pdf`);
+        doc.save(`SilverPG_Invoice_${invoiceId}.pdf`);
     }
 
     private numberToWords(amount: number): string {

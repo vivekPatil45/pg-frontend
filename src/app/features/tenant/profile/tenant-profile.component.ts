@@ -75,29 +75,19 @@ import { of } from 'rxjs';
               <!-- Mobile Number -->
               <div class="space-y-2">
                 <label class="text-sm font-medium text-foreground">Mobile Number</label>
-                <div class="flex gap-2">
-                  <select
-                    formControlName="countryCode"
-                    class="flex h-10 w-28 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <option value="+91">+91 (IN)</option>
-                    <option value="+1">+1 (US)</option>
-                    <option value="+44">+44 (UK)</option>
-                    <option value="+61">+61 (AU)</option>
-                    <option value="+971">+971 (UAE)</option>
-                    <option value="+65">+65 (SG)</option>
-                  </select>
+                <div class="relative">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium border-r border-border pr-2">+91</span>
                   <input
                     type="tel"
                     formControlName="phone"
                     placeholder="9876543210"
-                    class="flex h-10 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    class="flex h-10 w-full rounded-md border border-input bg-background pl-14 pr-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     [class.border-destructive]="profileForm.get('phone')?.touched && profileForm.get('phone')?.invalid"
                   />
                 </div>
                 @if (profileForm.get('phone')?.touched) {
                   @if (profileForm.get('phone')?.errors?.['pattern']) {
-                    <p class="text-sm text-destructive">Enter a valid mobile number (8–12 digits)</p>
+                    <p class="text-sm text-destructive">Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.</p>
                   }
                 }
               </div>
@@ -163,8 +153,7 @@ export class TenantProfileComponent implements OnInit {
     this.profileForm = this.fb.group({
       name: ['', Validators.required],
       email: [{ value: '', disabled: true }],
-      countryCode: ['+91'],
-      phone: ['', [Validators.pattern('^[0-9]{8,12}$')]],
+      phone: ['', [Validators.required, Validators.pattern('^[6-9]\\d{9}$')]],
     });
   }
 
@@ -195,23 +184,19 @@ export class TenantProfileComponent implements OnInit {
           const userData = response.data;
           this.user = userData;
 
-          // Split stored phone (e.g. "+91-9876543210") into parts
-          let countryCode = '+91';
+          // Split stored phone (e.g. "+91-9876543210" or "9876543210") into parts
           let phone = userData.phone || '';
           if (phone.includes('-')) {
-            const parts = phone.split('-');
-            countryCode = parts[0];
-            phone = parts[1] || '';
-          } else if (phone.startsWith('+')) {
-            // Try to extract plain number without country code
-            const match = phone.match(/^(\+\d{1,3})[- ]?(\d+)$/);
-            if (match) { countryCode = match[1]; phone = match[2]; }
+            phone = phone.split('-')[1] || '';
+          } else if (phone.startsWith('+91')) {
+            phone = phone.substring(3);
           }
+          // Remove any non-digits that might have slipped in
+          phone = phone.replace(/\D/g, '');
 
           this.profileForm.patchValue({
             name: userData.name,
             email: userData.email,
-            countryCode,
             phone,
           });
         }
@@ -246,11 +231,10 @@ export class TenantProfileComponent implements OnInit {
       this.message = '';
       this.isError = false;
 
-      const countryCode = this.profileForm.get('countryCode')?.value || '+91';
       const phone = this.profileForm.get('phone')?.value || '';
       const updateData: Partial<User> = {
         name: this.profileForm.get('name')?.value,
-        phone: phone ? `${countryCode}-${phone}` : '',
+        phone, // Just send the 10 digit number, backend will handle or we prepend if needed
       };
 
       this.tenantService.updateProfile(this.user.userId!, updateData).subscribe({
