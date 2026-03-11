@@ -15,6 +15,7 @@ export interface AdminBillResponse {
     billDate: string;
     dueDate: string;
     paymentStatus: string;
+    paymentMethod?: string;
     transactionId: string;
     createdAt: string;
 }

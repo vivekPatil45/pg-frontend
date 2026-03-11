@@ -5,6 +5,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { AdminPaymentService, AdminBillResponse } from '../../../core/services/admin-payment.service';
+import { InvoiceService } from '../../../core/services/invoice.service';
 import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
@@ -188,7 +189,8 @@ export class AdminPaymentsComponent implements OnInit {
 
     constructor(
         private adminPaymentService: AdminPaymentService,
-        private toastService: ToastService
+        private toastService: ToastService,
+        private invoiceService: InvoiceService
     ) { }
 
     ngOnInit() {
@@ -257,13 +259,44 @@ export class AdminPaymentsComponent implements OnInit {
     }
 
     onGenerateReceipt(billId: string) {
+        const payment = this.payments.find(p => p.billId === billId);
+        if (!payment) return;
+
         this.adminPaymentService.generateReceipt(billId).subscribe({
             next: (res) => {
                 if (res.success) {
                     this.toastService.success('Receipt generated.');
-                    // In a real app, open invoiceUrl
-                    if (res.data?.transactionId) {
-                        console.log('Transaction ID:', res.data.transactionId);
+                    
+                    // Construct a booking-like object for InvoiceService
+                    const mockBooking: any = {
+                        bookingId: payment.billId, // Fallback ID
+                        _id: payment.billId,
+                        totalAmount: payment.totalAmount,
+                        paymentStatus: payment.paymentStatus,
+                        paymentMethod: res.data?.paymentMethod || 'N/A',
+                        transactionId: res.data?.transactionId || 'N/A',
+                        moveInDate: payment.billDate,
+                        room: {
+                            roomNumber: payment.roomNumber,
+                            price: payment.totalAmount,
+                            roomType: 'PG Room'
+                        },
+                        user: {
+                            name: payment.tenantName,
+                            phone: payment.tenantPhone,
+                            email: 'N/A'
+                        },
+                        payment: {
+                            paymentMethod: res.data?.paymentMethod || 'N/A',
+                            balanceAmount: payment.balanceAmount
+                        }
+                    };
+                    
+                    try {
+                        this.invoiceService.generateInvoice(mockBooking);
+                    } catch (error) {
+                        console.error('PDF generation failed', error);
+                        this.toastService.error('Failed to create PDF file.');
                     }
                 }
             },

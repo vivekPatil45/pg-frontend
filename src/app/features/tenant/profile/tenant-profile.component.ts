@@ -154,6 +154,7 @@ export class TenantProfileComponent implements OnInit {
       name: ['', Validators.required],
       email: [{ value: '', disabled: true }],
       phone: ['', [Validators.required, Validators.pattern('^[6-9]\\d{9}$')]],
+      address: ['']
     });
   }
 
@@ -198,6 +199,7 @@ export class TenantProfileComponent implements OnInit {
             name: userData.name,
             email: userData.email,
             phone,
+            address: userData.address || ''
           });
         }
       },
@@ -235,6 +237,7 @@ export class TenantProfileComponent implements OnInit {
       const updateData: Partial<User> = {
         name: this.profileForm.get('name')?.value,
         phone, // Just send the 10 digit number, backend will handle or we prepend if needed
+        address: this.profileForm.get('address')?.value
       };
 
       this.tenantService.updateProfile(this.user.userId!, updateData).subscribe({

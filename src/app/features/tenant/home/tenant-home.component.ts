@@ -10,6 +10,7 @@ import { RoomService } from '../../../core/services/room.service';
 import { TenantService } from '../../../core/services/tenant.service';
 import { Room } from '../../../models/room.model';
 import { Booking } from '../../../models/booking.model';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-tenant-home',
@@ -141,37 +142,6 @@ import { Booking } from '../../../models/booking.model';
         }
       </section>
 
-      <!-- Quick Stats -->
-      <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-card rounded-xl border border-border p-4 text-center">
-          <svg class="h-8 w-8 mx-auto mb-2 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <p class="text-2xl font-bold text-foreground">24/7</p>
-          <p class="text-sm text-muted-foreground">Booking Available</p>
-        </div>
-        <div class="bg-card rounded-xl border border-border p-4 text-center">
-          <svg class="h-8 w-8 mx-auto mb-2 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p class="text-2xl font-bold text-foreground">Instant</p>
-          <p class="text-sm text-muted-foreground">Confirmation</p>
-        </div>
-        <div class="bg-card rounded-xl border border-border p-4 text-center">
-          <svg class="h-8 w-8 mx-auto mb-2 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
-          <p class="text-2xl font-bold text-foreground">Secure</p>
-          <p class="text-sm text-muted-foreground">Payment</p>
-        </div>
-        <div class="bg-card rounded-xl border border-border p-4 text-center">
-          <svg class="h-8 w-8 mx-auto mb-2 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-          </svg>
-          <p class="text-2xl font-bold text-foreground">5-Star</p>
-          <p class="text-sm text-muted-foreground">Service</p>
-        </div>
-      </section>
 
       <!-- Featured Rooms -->
       <section>
@@ -197,57 +167,83 @@ import { Booking } from '../../../models/booking.model';
         } @else {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @for (room of featuredRooms; track room.roomId) {
-              <div class="bg-card rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 group cursor-pointer" (click)="viewRoom(room)">
-                <!-- Room Image -->
-                <div class="h-48 bg-muted overflow-hidden">
-                  @if (room.images && room.images.length > 0) {
-                    <img [src]="room.images[0]" alt="Room Image" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                  } @else {
-                    <img [src]="getRandomRoomImage(room.roomNumber)" alt="Featured Room" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                  }
+              <div class="room-card" (click)="viewRoomDetails(room)">
+                <!-- Image -->
+                <div class="card-image-wrap">
+                  <img
+                    [src]="getRoomImage(room)"
+                    [alt]="'Room ' + room.roomNumber"
+                    class="card-image"
+                    (error)="onImageError($event)"
+                  >
+                  <div [class]="getRoomTypeBadgeClass(room.roomType)">
+                    {{ formatRoomType(room.roomType) }}
+                  </div>
+                  <div class="available-overlay">
+                    <span class="dot-available"></span> Available
+                  </div>
                 </div>
 
-                <!-- Room Details -->
-                <div class="p-6">
-                  <!-- Header: Type & Status -->
-                  <div class="flex justify-between items-center mb-1">
-                    <h3 class="text-lg font-bold text-foreground">{{ room.roomType }} Room</h3>
-                    <div class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider">
-                      AVAILABLE
-                    </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                  <!-- Room Number & Floor -->
+                  <div class="card-meta-row">
+                    <span class="room-number">Room {{ room.roomNumber }}</span>
+                    <span class="floor-badge">Floor {{ room.floor || 1 }}</span>
                   </div>
 
-                  <!-- Sub-info -->
-                  <p class="text-xs text-muted-foreground mb-3">
-                    Room {{ room.roomNumber }}
-                  </p>
+                  <!-- Price -->
+                  <div class="price-row">
+                    <span class="price-amount">₹{{ room.price | number }}</span>
+                    <span class="price-period">/month</span>
+                  </div>
 
-                  <!-- Description -->
-                  <p class="text-sm text-foreground/80 mb-4 line-clamp-2 min-h-[40px]">
-                    {{ room.description }}
-                  </p>
+                  <!-- Stats Row -->
+                  <div class="stats-row">
+                    <div class="stat-item">
+                      <span class="stat-icon text-primary/60" [innerHTML]="bedIconSmall"></span>
+                      <span class="stat-label">Capacity</span>
+                      <span class="stat-value">{{ room.totalBeds || (room.roomType === 'SINGLE_SHARING' ? 1 : room.roomType === 'DOUBLE_SHARING' ? 2 : 3) }} bed{{ room.totalBeds !== 1 ? 's' : '' }}</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item stat-green">
+                      <span class="stat-icon" [innerHTML]="availableIconSmall"></span>
+                      <span class="stat-label">Available</span>
+                      <span class="stat-value">{{ room.availableBeds || 1 }} bed{{ room.availableBeds !== 1 ? 's' : '' }}</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                      <span class="stat-icon text-primary/60" [innerHTML]="sizeIcon"></span>
+                      <span class="stat-label">Size</span>
+                      <span class="stat-value">{{ room.roomSize || 180 }} sq ft</span>
+                    </div>
+                  </div>
 
                   <!-- Amenities -->
-                  <div class="flex flex-wrap gap-2 mb-6">
-                    @for (amenity of room.amenities.slice(0, 3); track amenity) {
-                      <span class="inline-flex items-center text-[10px] bg-secondary/30 text-secondary-foreground px-2 py-0.5 rounded border border-border/50">
-                        {{ amenity }}
-                      </span>
-                    }
+                  <div class="amenities-row" *ngIf="room.amenities && room.amenities.length > 0">
+                    <span
+                      class="amenity-tag flex items-center gap-1"
+                      *ngFor="let a of room.amenities.slice(0, 3)"
+                    >
+                      <span class="w-3 h-3" [innerHTML]="getAmenityIcon(a)"></span>
+                      {{ a }}
+                    </span>
+                    <span class="amenity-more" *ngIf="room.amenities.length > 3">
+                      +{{ room.amenities.length - 3 }} more
+                    </span>
                   </div>
 
-                  <!-- Divider -->
-                  <div class="h-px bg-border/60 mb-6"></div>
+                  <!-- Description -->
+                  <p class="card-desc" *ngIf="room.description">{{ room.description }}</p>
 
-                  <!-- Price & Action -->
-                  <div class="flex justify-between items-center">
-                    <div class="flex items-baseline">
-                      <span class="text-xl font-bold text-foreground">₹{{ room.price }}</span>
-                      <span class="text-xs text-muted-foreground ml-1">/month</span>
-                    </div>
-                    <app-button size="sm" class="rounded-lg font-bold px-4 py-1.5 h-auto">
-                      Book Now
-                    </app-button>
+                  <!-- Actions -->
+                  <div class="card-actions">
+                    <button class="btn-details" (click)="viewRoomDetails(room); $event.stopPropagation()">
+                      View Details
+                    </button>
+                    <button class="btn-book" (click)="bookRoom(room); $event.stopPropagation()">
+                      Book Now →
+                    </button>
                   </div>
                 </div>
               </div>
@@ -307,6 +303,222 @@ import { Booking } from '../../../models/booking.model';
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
+
+    /* ─── Room Card (Consistent with Search Page) ─── */
+    .room-card {
+      background: var(--card, #fff);
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
+      cursor: pointer;
+    }
+    .room-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 35px rgba(0,0,0,0.12);
+    }
+
+    .card-image-wrap {
+      position: relative;
+      height: 200px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #667eea20, #764ba220);
+    }
+    .card-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    .room-card:hover .card-image { transform: scale(1.06); }
+    .card-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      backdrop-filter: blur(8px);
+    }
+    .badge-single {
+      background: rgba(99,102,241,0.85);
+      color: white;
+    }
+    .badge-double {
+      background: rgba(16,185,129,0.85);
+      color: white;
+    }
+    .badge-triple {
+      background: rgba(245,158,11,0.85);
+      color: white;
+    }
+    .available-overlay {
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      backdrop-filter: blur(6px);
+    }
+    .dot-available {
+      width: 7px; height: 7px;
+      background: #10b981;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 6px #10b981;
+    }
+
+    .card-body { padding: 1.25rem; }
+    .card-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    .room-number {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--foreground, #1a1a2e);
+    }
+    .floor-badge {
+      font-size: 0.72rem;
+      color: var(--muted-foreground, #64748b);
+      background: var(--secondary, #f1f5f9);
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.25rem;
+      margin-bottom: 1rem;
+    }
+    .price-amount {
+      font-size: 1.6rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .price-period {
+      font-size: 0.8rem;
+      color: var(--muted-foreground, #64748b);
+    }
+
+    .stats-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--secondary, #f8fafc);
+      border-radius: 10px;
+      padding: 0.6rem 0.75rem;
+      margin-bottom: 0.9rem;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      gap: 0.1rem;
+    }
+    .stat-item.stat-green .stat-value { color: #10b981; font-weight: 700; }
+    .stat-icon { font-size: 0.9rem; }
+    .stat-label {
+      font-size: 0.65rem;
+      color: var(--muted-foreground, #94a3b8);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-value {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--foreground, #374151);
+    }
+    .stat-divider {
+      width: 1px;
+      height: 28px;
+      background: var(--border, #e2e8f0);
+    }
+
+    .amenities-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-bottom: 0.75rem;
+    }
+    .amenity-tag {
+      font-size: 0.72rem;
+      background: rgba(102,126,234,0.08);
+      color: #667eea;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      border: 1px solid rgba(102,126,234,0.2);
+      font-weight: 500;
+    }
+    .amenity-more {
+      font-size: 0.72rem;
+      color: var(--muted-foreground, #94a3b8);
+      align-self: center;
+    }
+
+    .card-desc {
+      font-size: 0.78rem;
+      color: var(--muted-foreground, #64748b);
+      margin: 0 0 1rem;
+      line-height: 1.5;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 0.6rem;
+    }
+    .btn-details {
+      flex: 1;
+      padding: 0.55rem 0;
+      border-radius: 10px;
+      border: 1.5px solid var(--border, #e2e8f0);
+      background: transparent;
+      color: var(--foreground, #374151);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .btn-details:hover {
+      border-color: #667eea;
+      color: #667eea;
+    }
+    .btn-book {
+      flex: 1;
+      padding: 0.55rem 0;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.18s, transform 0.18s;
+      box-shadow: 0 3px 10px rgba(102,126,234,0.3);
+    }
+    .btn-book:hover { opacity: 0.9; transform: translateY(-1px); }
   `]
 })
 export class TenantHomeComponent implements OnInit {
@@ -318,6 +530,10 @@ export class TenantHomeComponent implements OnInit {
   activeBooking: Booking | null = null;
   isLoadingActiveStay = false;
 
+  bedIconSmall!: SafeHtml;
+  availableIconSmall!: SafeHtml;
+  sizeIcon!: SafeHtml;
+
   searchCriteria = {
     moveInDate: '',
     roomType: ''
@@ -327,8 +543,26 @@ export class TenantHomeComponent implements OnInit {
     private authService: AuthService,
     private roomService: RoomService,
     private tenantService: TenantService,
-    private router: Router
-  ) { }
+    private router: Router,
+    private sanitizer: DomSanitizer
+  ) {
+    this.initIcons();
+  }
+
+  private initIcons() {
+    const icons = {
+      bed: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>',
+      available: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+      size: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>',
+      wifi: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/></svg>',
+      food: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a6 6 0 0112 0H6z"/></svg>',
+      ac: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>'
+    };
+
+    this.bedIconSmall = this.sanitizer.bypassSecurityTrustHtml(icons.bed);
+    this.availableIconSmall = this.sanitizer.bypassSecurityTrustHtml(icons.available);
+    this.sizeIcon = this.sanitizer.bypassSecurityTrustHtml(icons.size);
+  }
 
   ngOnInit() {
     this.loadFeaturedRooms();
@@ -350,10 +584,10 @@ export class TenantHomeComponent implements OnInit {
 
   loadFeaturedRooms() {
     this.isLoading = true;
-    // Empty criteria to just get latest available rooms
+    // Just get any top 3 available rooms
     const criteria = {
       moveInDate: this.minDate,
-      roomType: 'SINGLE_SHARING' // Default search to show something
+      roomType: ''
     };
 
     this.roomService.searchRooms(criteria, 0, 3).subscribe({
@@ -368,6 +602,69 @@ export class TenantHomeComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  viewRoomDetails(room: any) {
+    this.router.navigate(['/tenant/rooms', room.roomId]);
+  }
+
+  bookRoom(room: any) {
+    this.router.navigate(['/tenant/book', room.roomId]);
+  }
+
+  getRoomImage(room: any): string {
+    if (room.images && room.images.length > 0) {
+      return room.images[0];
+    }
+    return this.getPlaceholderImage(room.roomNumber);
+  }
+
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    img.src = 'assets/room1.png';
+  }
+
+  getPlaceholderImage(roomNumber: string): string {
+    const images = ['room1.png', 'room2.png', 'room3.png', 'room4.png', 'room5.png'];
+    const num = (roomNumber || '').replace(/\D/g, '');
+    const index = num ? parseInt(num.slice(-1)) % images.length : Math.floor(Math.random() * images.length);
+    return `assets/${images[index]}`;
+  }
+
+  formatRoomType(type: string): string {
+    const map: { [k: string]: string } = {
+      'SINGLE_SHARING': 'Single',
+      'DOUBLE_SHARING': 'Double',
+      'TRIPLE_SHARING': 'Triple',
+    };
+    return map[type] || type;
+  }
+
+  getRoomTypeBadgeClass(type: string): string {
+    const map: { [k: string]: string } = {
+      'SINGLE_SHARING': 'card-badge badge-single',
+      'DOUBLE_SHARING': 'card-badge badge-double',
+      'TRIPLE_SHARING': 'card-badge badge-triple',
+    };
+    return map[type] || 'card-badge badge-single';
+  }
+
+  getAmenityIcon(amenity: string): SafeHtml {
+    const icons: { [key: string]: string } = {
+      'WiFi': '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/></svg>',
+      'Food': '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a6 6 0 0112 0H6z"/></svg>',
+      'Laundry': '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>',
+      'AC': '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>',
+      'TV': '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2M17 4V2M5 8h14a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7a2 2 0 012-2z"/></svg>',
+      'Cleaning': '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>',
+      'Parking': '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>',
+    };
+
+    const defaultIcon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+
+    const iconStr = icons[amenity] || Object.entries(icons).find(([k]) => amenity.toLowerCase().includes(k.toLowerCase()))?.[1] || defaultIcon;
+
+    return this.sanitizer.bypassSecurityTrustHtml(iconStr);
   }
 
   validateDates() {

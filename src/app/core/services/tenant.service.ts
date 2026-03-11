@@ -68,4 +68,11 @@ export class TenantService {
             params: { page: page.toString(), size: size.toString() }
         });
     }
+
+    payRent(bookingId: string, paymentMethod: string, transactionId: string): Observable<ApiResponse<any>> {
+        return this.http.post<ApiResponse<any>>(
+            `${this.apiUrl}/bookings/${bookingId}/pay-rent`,
+            { paymentMethod, transactionId }
+        );
+    }
 }

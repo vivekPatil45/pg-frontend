@@ -11,10 +11,12 @@ export interface Booking {
     tenant?: any;
     roomId: string;
     room?: Room;
-    bedId: string;
+    bedId?: string;       // Assigned bed ID (from active-stay response)
+    bedNumber?: number;   // Assigned bed number (from active-stay response)
     moveInDate: string;
     status: BookingStatus;
     paymentStatus: string;
+    paymentMethod?: string;
     transactionId?: string;
     totalAmount?: number;
     cancellationDate?: string;

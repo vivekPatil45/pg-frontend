@@ -8,10 +8,10 @@ import { ToastService } from '../../../core/services/toast.service';
 import { User } from '../../../models/user.model';
 
 @Component({
-    selector: 'app-admin-profile',
-    standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, ButtonComponent, ModalComponent],
-    template: `
+  selector: 'app-admin-profile',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, ButtonComponent, ModalComponent],
+  template: `
     <div class="space-y-6 animate-fade-in max-w-2xl mx-auto">
       <div>
         <h1 class="text-3xl font-bold text-foreground">My Profile</h1>
@@ -34,14 +34,10 @@ import { User } from '../../../models/user.model';
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4 border-t border-border pt-4 text-sm">
+          <div class="grid grid-cols-1 gap-4 border-t border-border pt-4 text-sm">
             <div>
               <p class="text-muted-foreground">Phone</p>
               <p class="font-medium text-foreground mt-0.5">{{ currentUser.phone || 'Not set' }}</p>
-            </div>
-            <div>
-              <p class="text-muted-foreground">User ID</p>
-              <p class="font-mono text-xs text-foreground mt-0.5 truncate">{{ currentUser.userId }}</p>
             </div>
           </div>
         </div>
@@ -58,6 +54,12 @@ import { User } from '../../../models/user.model';
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 placeholder="Enter current password"
               >
+              @if (passwordForm.get('currentPassword')?.errors?.['required'] && passwordForm.get('currentPassword')?.touched) {
+                <span class="text-xs text-destructive">Current password is required</span>
+              }
+              @if (passwordForm.get('currentPassword')?.errors?.['backend']) {
+                <span class="text-xs text-destructive">{{ passwordForm.get('currentPassword')?.errors?.['backend'] }}</span>
+              }
             </div>
             <div class="space-y-2">
               <label class="text-sm font-medium text-foreground">New Password *</label>
@@ -65,22 +67,34 @@ import { User } from '../../../models/user.model';
                 formControlName="newPassword"
                 type="password"
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                placeholder="Minimum 6 characters"
+                placeholder="Min 8 chars: uppercase, lowercase, number, special char"
               >
-              @if (passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched) {
-                <span class="text-xs text-destructive">Minimum 6 characters required.</span>
+              @if (passwordForm.get('newPassword')?.errors?.['required'] && passwordForm.get('newPassword')?.touched) {
+                <span class="text-xs text-destructive">New password is required</span>
+              }
+              @if (passwordForm.get('newPassword')?.errors?.['pattern'] && passwordForm.get('newPassword')?.touched) {
+                <span class="text-xs text-destructive">Password must be at least 8 characters and include uppercase, lowercase, number, and special character</span>
+              }
+              @if (passwordForm.get('newPassword')?.errors?.['backend']) {
+                <span class="text-xs text-destructive">{{ passwordForm.get('newPassword')?.errors?.['backend'] }}</span>
               }
             </div>
             <div class="space-y-2">
               <label class="text-sm font-medium text-foreground">Confirm New Password *</label>
               <input
-                formControlName="confirmPassword"
+                formControlName="confirmNewPassword"
                 type="password"
                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 placeholder="Re-enter new password"
               >
-              @if (passwordForm.errors?.['mismatch'] && passwordForm.get('confirmPassword')?.touched) {
+              @if (passwordForm.get('confirmNewPassword')?.errors?.['required'] && passwordForm.get('confirmNewPassword')?.touched) {
+                <span class="text-xs text-destructive">Confirm new password is required</span>
+              }
+              @if (passwordForm.errors?.['mismatch'] && passwordForm.get('confirmNewPassword')?.touched) {
                 <span class="text-xs text-destructive">Passwords do not match.</span>
+              }
+              @if (passwordForm.get('confirmNewPassword')?.errors?.['backend']) {
+                <span class="text-xs text-destructive">{{ passwordForm.get('confirmNewPassword')?.errors?.['backend'] }}</span>
               }
             </div>
 
@@ -100,62 +114,80 @@ import { User } from '../../../models/user.model';
       }
     </div>
   `,
-    styles: []
+  styles: []
 })
 export class AdminProfileComponent implements OnInit {
-    currentUser: User | null = null;
-    passwordForm: FormGroup;
-    isChangingPassword = false;
-    passwordError = '';
+  currentUser: User | null = null;
+  passwordForm: FormGroup;
+  isChangingPassword = false;
+  passwordError = '';
 
-    constructor(
-        private fb: FormBuilder,
-        private authService: AuthService,
-        private toastService: ToastService
-    ) {
-        this.passwordForm = this.fb.group({
-            currentPassword: ['', Validators.required],
-            newPassword: ['', [Validators.required, Validators.minLength(6)]],
-            confirmPassword: ['', Validators.required]
-        }, { validators: this.passwordMatchValidator });
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private toastService: ToastService
+  ) {
+    this.passwordForm = this.fb.group({
+      currentPassword: ['', Validators.required],
+      newPassword: ['', [
+        Validators.required,
+        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+      ]],
+      confirmNewPassword: ['', Validators.required]
+    }, { validators: this.passwordMatchValidator });
+  }
+
+  ngOnInit() {
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+    });
+  }
+
+  passwordMatchValidator(group: FormGroup) {
+    const pw = group.get('newPassword')?.value;
+    const confirm = group.get('confirmNewPassword')?.value;
+    return pw === confirm ? null : { mismatch: true };
+  }
+
+  changePassword() {
+    if (this.passwordForm.invalid) {
+      this.passwordForm.markAllAsTouched();
+      return;
     }
+    this.isChangingPassword = true;
+    this.passwordError = '';
+    this.passwordForm.get('currentPassword')?.setErrors(null);
+    this.passwordForm.get('newPassword')?.setErrors(null);
+    this.passwordForm.get('confirmNewPassword')?.setErrors(null);
 
-    ngOnInit() {
-        this.authService.currentUser$.subscribe(user => {
-            this.currentUser = user;
-        });
-    }
-
-    passwordMatchValidator(group: FormGroup) {
-        const pw = group.get('newPassword')?.value;
-        const confirm = group.get('confirmPassword')?.value;
-        return pw === confirm ? null : { mismatch: true };
-    }
-
-    changePassword() {
-        if (this.passwordForm.invalid) {
-            this.passwordForm.markAllAsTouched();
-            return;
-        }
-        this.isChangingPassword = true;
-        this.passwordError = '';
-
-        const { currentPassword, newPassword } = this.passwordForm.value;
-        this.authService.changePassword({ currentPassword, newPassword }).subscribe({
-            next: () => {
-                this.toastService.success('Password changed successfully.');
-                this.passwordForm.reset();
-                this.isChangingPassword = false;
-            },
-            error: (err) => {
-                this.passwordError = err.error?.message || 'Failed to change password.';
-                this.isChangingPassword = false;
+    const { currentPassword, newPassword, confirmNewPassword } = this.passwordForm.value;
+    this.authService.changePassword({ currentPassword, newPassword, confirmNewPassword }).subscribe({
+      next: () => {
+        this.toastService.success('Password changed successfully.');
+        this.passwordForm.reset();
+        this.isChangingPassword = false;
+      },
+      error: (err) => {
+        // Handle backend validation errors per-field
+        if (err.error?.errors) {
+          err.error.errors.forEach((e: any) => {
+            if (e.field === 'currentPassword') {
+              this.passwordForm.get('currentPassword')?.setErrors({ backend: e.message });
+            } else if (e.field === 'newPassword') {
+              this.passwordForm.get('newPassword')?.setErrors({ backend: e.message });
+            } else if (e.field === 'confirmNewPassword') {
+              this.passwordForm.get('confirmNewPassword')?.setErrors({ backend: e.message });
             }
-        });
-    }
+          });
+        }
+        this.passwordError = err.error?.message || 'Failed to change password.';
+        this.isChangingPassword = false;
+      }
+    });
+  }
 
-    getInitials(name: string): string {
-        if (!name) return 'A';
-        return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
-    }
+  getInitials(name: string): string {
+    if (!name) return 'A';
+    return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  }
 }

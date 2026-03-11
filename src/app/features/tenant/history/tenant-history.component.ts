@@ -415,9 +415,30 @@ export class TenantHistoryComponent implements OnInit {
       return;
     }
 
-    // Reuse invoice service if it supports bill objects or adapt it
-    // For now, minimal mock implementation
-    this.toastService.success('Downloading receipt for bill ' + bill.billId);
+    // Build a compatible Booking object from the bill data for InvoiceService
+    const bookingForInvoice: any = {
+      bookingId: bill.booking?.bookingId || bill.billId,
+      _id: bill.billId,
+      totalAmount: bill.totalAmount,
+      paymentStatus: bill.paymentStatus,
+      paymentMethod: bill.paymentMethod,
+      transactionId: bill.transactionId || 'N/A',
+      moveInDate: bill.billDate,
+      room: bill.booking?.room,
+      user: bill.tenant,
+      tenant: bill.tenant,
+      payment: {
+        paymentMethod: bill.paymentMethod,
+        balanceAmount: bill.balanceAmount
+      }
+    };
+
+    try {
+      this.invoiceService.generateInvoice(bookingForInvoice);
+    } catch (error) {
+      console.error('Receipt generation failed', error);
+      this.toastService.error('Unable to generate receipt. Please try again later.');
+    }
   }
 
 }

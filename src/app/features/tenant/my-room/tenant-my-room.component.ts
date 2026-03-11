@@ -1,17 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { TenantService } from '../../../core/services/tenant.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { Booking } from '../../../models/booking.model';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
     selector: 'app-tenant-my-room',
     standalone: true,
-    imports: [CommonModule, RouterModule, StatusBadgeComponent, ButtonComponent, LoadingSpinnerComponent],
+    imports: [CommonModule, RouterModule, FormsModule, StatusBadgeComponent, ButtonComponent, LoadingSpinnerComponent],
     template: `
     <div class="space-y-6 animate-fade-in relative">
       <div>
@@ -162,7 +164,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                             <span class="font-mono">{{ booking.transactionId || 'N/A' }}</span>
                         </div>
                         
-                        <app-button class="w-full mt-2 group" (click)="payRent()">
+                        <app-button class="w-full mt-2 group" (click)="openPayRentModal()">
                             Pay Rent Early
                             <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                         </app-button>
@@ -207,6 +209,50 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
         </div>
       }
     </div>
+
+    <!-- Pay Rent Early Modal -->
+    @if (showPayRentModal) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
+        <div class="bg-card w-full max-w-md rounded-xl shadow-lg border border-border p-6 relative">
+          <button class="absolute top-4 right-4 text-muted-foreground hover:text-foreground" (click)="showPayRentModal = false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+          <h3 class="text-xl font-bold text-foreground mb-2">Pay Monthly Rent</h3>
+          <p class="text-muted-foreground text-sm mb-4">Pay rent for Room <strong>{{ booking?.room?.roomNumber }}</strong>. Amount: <strong>₹{{ booking?.room?.price }}</strong></p>
+
+          <div class="space-y-3 mb-5">
+            <label class="text-sm font-medium text-foreground">Select Payment Method</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button"
+                class="py-2 px-3 rounded-md border text-sm font-medium transition-colors"
+                [ngClass]="payRentMethod === 'UPI' ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-muted-foreground hover:bg-muted'"
+                (click)="payRentMethod = 'UPI'">UPI</button>
+              <button type="button"
+                class="py-2 px-3 rounded-md border text-sm font-medium transition-colors"
+                [ngClass]="payRentMethod === 'CREDIT_CARD' ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-muted-foreground hover:bg-muted'"
+                (click)="payRentMethod = 'CREDIT_CARD'">Card</button>
+              <button type="button"
+                class="py-2 px-3 rounded-md border text-sm font-medium transition-colors"
+                [ngClass]="payRentMethod === 'NET_BANKING' ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-background text-muted-foreground hover:bg-muted'"
+                (click)="payRentMethod = 'NET_BANKING'">Net Banking</button>
+            </div>
+          </div>
+
+          @if (payRentError) {
+            <div class="bg-destructive/10 text-destructive text-sm px-3 py-2 rounded-lg mb-4">
+              {{ payRentError }}
+            </div>
+          }
+
+          <div class="flex gap-3">
+            <app-button variant="outline" class="flex-1" (click)="showPayRentModal = false">Cancel</app-button>
+            <app-button class="flex-1" [disabled]="isPayingRent" (click)="confirmPayRent()">
+              {{ isPayingRent ? 'Processing...' : 'Confirm Payment' }}
+            </app-button>
+          </div>
+        </div>
+      </div>
+    }
   `
 })
 export class TenantMyRoomComponent implements OnInit {
@@ -214,9 +260,14 @@ export class TenantMyRoomComponent implements OnInit {
     booking: Booking | null = null;
     bedNumber: string = '';
     nextDueDate: Date = new Date();
+    showPayRentModal = false;
+    payRentMethod: string = 'UPI';
+    isPayingRent = false;
+    payRentError = '';
 
     constructor(
         private tenantService: TenantService,
+        private toastService: ToastService,
         private router: Router,
         private sanitizer: DomSanitizer
     ) { }
@@ -235,8 +286,10 @@ export class TenantMyRoomComponent implements OnInit {
                     const moveIn = new Date(this.booking.moveInDate || new Date());
                     this.nextDueDate = new Date(moveIn.getFullYear(), moveIn.getMonth() + 1, 1);
 
-                    // Extract bed number if possible from ID
-                    if (this.booking.bedId) {
+                    // Use bedNumber directly from API response
+                    if (this.booking.bedNumber) {
+                        this.bedNumber = String(this.booking.bedNumber);
+                    } else if (this.booking.bedId) {
                         this.bedNumber = this.booking.bedId.split('-').pop() || this.booking.bedId;
                     } else {
                         this.bedNumber = '';
@@ -276,8 +329,34 @@ export class TenantMyRoomComponent implements OnInit {
         return s[(v - 20) % 10] || s[v] || s[0];
     }
 
-    payRent() {
-        // Generate mock bill and navigate to payment
-        this.router.navigate(['/tenant/payment', this.booking?.bookingId]);
+    openPayRentModal() {
+        this.payRentError = '';
+        this.showPayRentModal = true;
     }
+
+    confirmPayRent() {
+        if (!this.booking?.bookingId) return;
+        this.isPayingRent = true;
+        this.payRentError = '';
+
+        const txnId = 'TXN_' + Math.random().toString(36).substring(2, 11).toUpperCase();
+        this.tenantService.payRent(this.booking.bookingId, this.payRentMethod, txnId).subscribe({
+            next: (res) => {
+                this.isPayingRent = false;
+                this.showPayRentModal = false;
+                this.toastService.success('Rent paid successfully! Transaction ID: ' + res.data.transactionId);
+                this.fetchActiveStay(); // Refresh data
+            },
+            error: (err) => {
+                this.isPayingRent = false;
+                this.payRentError = err.error?.message || 'Payment failed. Please try again.';
+            }
+        });
+    }
+
+    payRent() {
+        // Kept for backward compat — now opens the modal
+        this.openPayRentModal();
+    }
+
 }

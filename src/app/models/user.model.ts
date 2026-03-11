@@ -13,6 +13,7 @@ export interface User {
     phone: string;
     role: UserRole;
     requirePasswordChange?: boolean;
+    address?: string;
     profileImage?: string;
     idProof?: string;
     createdAt?: string;

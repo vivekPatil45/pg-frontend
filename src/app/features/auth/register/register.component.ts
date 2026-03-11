@@ -70,7 +70,7 @@ function mobileNumberValidator(control: AbstractControl): ValidationErrors | nul
             type="text"
             formControlName="name"
             class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
-            placeholder="John Doe"
+            placeholder="User name"
             [class.border-destructive]="isFieldInvalid('name')"
           />
           @if (isFieldInvalid('name')) {
@@ -120,14 +120,14 @@ function mobileNumberValidator(control: AbstractControl): ValidationErrors | nul
         <!-- ID Proof -->
         <div class="space-y-2">
           <label for="idProof" class="text-sm font-medium text-foreground block">
-            ID Proof (Aadhar/PAN/Voter ID) <span class="text-destructive">*</span>
+            Aadhaar Number <span class="text-destructive">*</span>
           </label>
           <input
             id="idProof"
             type="text"
             formControlName="idProof"
             class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
-            placeholder="Enter your ID proof number"
+            placeholder="Enter your 12-digit Aadhaar number"
             [class.border-destructive]="isFieldInvalid('idProof')"
           />
           @if (isFieldInvalid('idProof')) {
@@ -234,7 +234,10 @@ export class RegisterComponent implements OnInit {
         Validators.pattern('^[0-9]+$'),
         mobileNumberValidator
       ]],
-      idProof: ['', [Validators.required, Validators.minLength(5)]],
+      idProof: ['', [
+        Validators.required,
+        Validators.pattern('^[2-9][0-9]{11}$')
+      ]],
       password: ['', [
         Validators.required,
         Validators.minLength(8),
@@ -313,8 +316,8 @@ export class RegisterComponent implements OnInit {
 
 
     if (fieldName === 'idProof') {
-      if (field.errors['required']) return 'ID Proof is required';
-      if (field.errors['minlength']) return 'Enter a valid ID proof number';
+      if (field.errors['required']) return 'Aadhaar Number is required';
+      if (field.errors['pattern']) return 'Please enter a valid 12-digit Aadhaar number';
     }
 
     if (fieldName === 'password') {

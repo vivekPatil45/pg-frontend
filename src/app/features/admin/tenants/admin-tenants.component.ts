@@ -147,8 +147,8 @@ import { Room } from '../../../models/room.model';
             <input type="text" formControlName="phone" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
           </div>
           <div class="space-y-2">
-            <label class="text-sm font-medium text-foreground">ID Proof Reference</label>
-            <input type="text" formControlName="idProof" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Aadhar / PAN / Passport Number">
+            <label class="text-sm font-medium text-foreground">Aadhaar Number</label>
+            <input type="text" formControlName="idProof" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Enter 12-digit Aadhaar number">
           </div>
           <div class="space-y-2">
             <label class="text-sm font-medium text-foreground">Check-in Date</label>
@@ -278,7 +278,7 @@ export class AdminTenantsComponent implements OnInit {
     this.editForm = this.fb.group({
       name: ['', Validators.required],
       phone: ['', Validators.required],
-      idProof: [''],
+      idProof: ['', [Validators.pattern('^[2-9][0-9]{11}$')]],
       checkInDate: [''],
       status: ['ACTIVE']
     });
